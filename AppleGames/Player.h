@@ -9,5 +9,5 @@ namespace ApplesGame
 {
 	void SetDirection(Game& game, sf::Event& event);
 	void SetMovementInDirection(Game& game, float& deltaTime);
-	void CheckCollision(bool& rockCollision, Game& game, sf::RenderWindow& window, sf::Font& font, sf::Event& event, bool& triggerEndGame, bool& borderCollision);
+	void CheckCollision(Game& game, sf::RenderWindow& window, sf::Font& font, sf::Event& event);
 }

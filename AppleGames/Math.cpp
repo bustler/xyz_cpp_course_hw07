@@ -1,6 +1,5 @@
 #include "Math.h"
 #include <SFML/Graphics.hpp>
-// #include <__config>
 
 namespace ApplesGame
 {

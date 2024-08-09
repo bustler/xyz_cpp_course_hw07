@@ -6,6 +6,16 @@
 #include <sys/_types/_size_t.h>
 #include <cstdint>
 
+void DrawText(sf::String text, sf::Font& font, ApplesGame::Vector2D coordinateOfWindow, sf::RenderWindow& window, sf::Color color = sf::Color::White)
+{
+	sf::Text item;
+	item.setFont(font);
+	item.setCharacterSize(20);
+	item.setFillColor(color);
+	item.setPosition(coordinateOfWindow.x, coordinateOfWindow.y);
+	item.setString(text);
+	window.draw(item);
+}
 
 void DrawBorderMenu(ApplesGame::Vector2D sizeOfWindow, sf::RenderWindow& window)
 {
@@ -28,17 +38,6 @@ void DrawBorderMenu(ApplesGame::Vector2D sizeOfWindow, sf::RenderWindow& window)
 	}
 }
 
-void DrawText(sf::String text, sf::Font& font, ApplesGame::Vector2D coordinateOfWindow, sf::RenderWindow& window)
-{
-	sf::Text item;
-	item.setFont(font);
-	item.setCharacterSize(20);
-	item.setFillColor(sf::Color::White);
-	item.setPosition(coordinateOfWindow.x, coordinateOfWindow.y);
-	item.setString(text);
-	window.draw(item);
-}
-
 void SelectionButtons(bool (&selector)[2][4], ApplesGame::Vector2D sizeOfWindow, sf::RenderWindow& window, sf::Event& event, ApplesGame::Game& game)
 {
 	float x = sizeOfWindow.x - 20;
@@ -49,7 +48,6 @@ void SelectionButtons(bool (&selector)[2][4], ApplesGame::Vector2D sizeOfWindow,
 	{
 		for(size_t j = 0; j < 4; j++)
 		{
-
 			// Draw cursor
 			if(selector[i][j])
 			{
@@ -58,13 +56,12 @@ void SelectionButtons(bool (&selector)[2][4], ApplesGame::Vector2D sizeOfWindow,
 				cursor[i][j].setPosition(50 +(x / 4 * j), 200 + (y / 2 * i));
 				window.draw(cursor[i][j]);
 
-				if((event.type == sf::Event::KeyPressed) && event.key.code == sf::Keyboard::RShift)
+				if(event.key.code == sf::Keyboard::Enter)
 				{
 					game.setupOfGame ^= allSetings[i*4+j];
 					sf::sleep(sf::microseconds(200000));
 				}
 			}
-			
 			
 			lines.setSize(sf::Vector2f(5, 30));
 			lines.setFillColor(sf::Color::White);
@@ -81,7 +78,6 @@ void SelectionButtons(bool (&selector)[2][4], ApplesGame::Vector2D sizeOfWindow,
 			window.draw(lines);
 			lines.setPosition(157.5 +(x / 4 * j), 250 + (y / 2 * i));
 			window.draw(lines);
-
 
 			if(game.setupOfGame & allSetings[(i * 4) + j])
 			{
@@ -177,10 +173,55 @@ void MoveCursor(bool (&selector)[2][4], sf::Event& event)
 
 namespace ApplesGame
 {
-	const char* END_GAME_MESSAGE = "Press 'esc' to quit the game\nPress 'L' for continue\nPress 'H' to view information";
-	const char* INFO_MESSAGE = "ON ARROW YOU ARE CAN CHANGE DIRECTION MOVEMENT:\n\tUP IT'S UP\n\tDOWN IT'S DOWN\n\tRIGHT IT'S RUGHT\n\tLEFT IT'S LEFT.\n\nAND YOU HAVE COMBITATION: \n\tUP+RIGHT OR UP+LEFT, \n\tDOWN+RIGHT OR DOWN+LEFT\n\nWHEN YOU ARE CRASH IN BORDER OR ROCK:\n\t\tYOU CAN RESTART GAME TO PRESS 'ENTER' \n\t\tOR CAN EXIT TO PRESS 'ESC'";
+	const char* END_GAME_MESSAGE = "Press 'esc' to quit to the main menu\nPress 'L' for continue\nPress 'H' to view information";
+	const char* INFO_MESSAGE = "ON ARROW YOU ARE CAN CHANGE DIRECTION MOVEMENT:\n\tUP IT'S UP\n\tDOWN IT'S DOWN\n\tRIGHT IT'S RUGHT\n\tLEFT IT'S LEFT.\n\nAND YOU HAVE COMBITATION: \n\tUP+RIGHT OR UP+LEFT, \n\tDOWN+RIGHT OR DOWN+LEFT\n\nWHEN YOU ARE CRASH IN BORDER OR ROCK:\n\t\tYOU CAN RESTART GAME TO PRESS 'L' \n\t\tOR CAN GO TO MAIN WHEN PRESS 'ESC'";
 	const char* MENU_MESSAGE[] = {"hotkey F1\nRandom number of apple", "hotkey F2\nInfinite(apple) mode", "hotkey F3\nSpeed up after\n eaten apple", "hotkey F4\nRandom number of rocks", "hotkey F5\nDisable rocks", "hotkey F6\nPossibility diagonal movement", "hotkey F7\nBorder\n(don't work)", "hotkey F8\nSound"};
-	// const char* HOTKEYS_MENU_MESSAGE[] = {"hotkey 1", "hotkey 2", "hotkey 3", "hotkey 4", "hotkey 5", "hotkey 6", "hotkey 7", "hotkey 8"};
+	
+	void DrawTop(Game& game, sf::Event& event, sf::RenderWindow& window, sf::Font& font)
+	{
+		window.clear();
+
+		for(size_t i = 0; i < 6; i++)
+		{
+			if(game.scoresNames[i] == "Player")
+			{
+				game.scoresPoints[i] = game.bestValueEatenApple;
+			}
+		}
+
+		BubleSort(game);
+		DrawText("TOP:", font, {100 + SCREEN_WIDTH / 2.f, 50}, window, sf::Color::Red);
+		for (size_t i = 0; i < 6; i++)
+		{
+			DrawText(game.scoresNames[i], font, 
+				{100 + SCREEN_WIDTH / 2.f, 100 + (SCREEN_HEIGHT / 8.f) * i}, window);
+			DrawText(std::to_string(game.scoresPoints[i]), font, 
+				{300 + SCREEN_WIDTH / 2.f, 100 + (SCREEN_HEIGHT / 8.f) * i}, window);
+		}
+		DrawText(INFO_MESSAGE, font, {10, 50}, window);
+
+		window.display();
+
+		while(game.gameState == GameState::ScoreAndLegend)
+		{
+			while(window.pollEvent(event))
+			{
+				if (event.type == sf::Event::Closed) 
+				{
+					game.gameState = GameState::Exit;
+					window.close();
+					break;
+				}				
+			}
+
+			if (event.key.code == sf::Keyboard::Escape) 
+			{
+				game.gameState = GameState::MainMenu;
+				sf::sleep(sf::microseconds(150000));
+				break;
+			}
+		}
+	}
 
 	MenuInfo ShowInfo(sf::Font& font)
 	{
@@ -201,7 +242,7 @@ namespace ApplesGame
 		return { printTime, scoreShow };
 	}
 
-	void EndGame(sf::RenderWindow& window, sf::Font& font, sf::Event& event, bool& triggerEndGame, Game& game)
+	void EndGame(Game& game, sf::Event& event, sf::RenderWindow& window, sf::Font& font)
 	{
 		sf::SoundBuffer loseGame;
 		loseGame.loadFromFile("Resources/Death.wav");
@@ -211,67 +252,126 @@ namespace ApplesGame
 		{
 			sound.play();
 		}
-
-		//Sort and view top's
-		for(size_t i = 0; i < 6; i++)
-		{
-			if(game.scoresNames[i] == "Player")
-			{
-				game.scoresPoints[i] = game.numEatenApples;
-			}
-		}
-		BubleSort(game);
-		for (size_t i = 0; i < 6; i++)
-		{
-			DrawText(game.scoresNames[i], font, {100 + SCREEN_WIDTH / 10.f, 100 + (SCREEN_HEIGHT / 8.f) * i}, window);
-			DrawText(std::to_string(game.scoresPoints[i]), font, {300 + SCREEN_WIDTH / 10.f, 100 + (SCREEN_HEIGHT / 8.f) * i}, window);
-		}
-
 		DrawText(END_GAME_MESSAGE, font, {SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f}, window);
 		window.display();
-
-		while (!triggerEndGame) {
+		while (game.gameState == GameState::GameOver) 
+		{
 			while (window.pollEvent(event))
 			{
-				if (event.type == sf::Event::Closed) {
-					triggerEndGame = true;
+				if (event.type == sf::Event::Closed) 
+				{
+					game.gameState = GameState::Exit;
 					window.close();
 					break;
 				}
 			}
-			if ((event.type == sf::Event::KeyPressed) && event.key.code == sf::Keyboard::Escape) {
-				triggerEndGame = true;
-				window.close();
+
+			if(event.key.code == sf::Keyboard::Escape)
+			{
+				game.gameState = GameState::MainMenu;
+			}
+			else if (event.key.code == sf::Keyboard::L) 
+			{
+				game.gameState = GameState::Play;
 				break;
 			}
-			else if (event.key.code == sf::Keyboard::L) {
-				break;
-			}
-			else if (event.key.code == sf::Keyboard::H) {
+			else if (event.key.code == sf::Keyboard::H) 
+			{
 				window.clear();	
 				DrawText(INFO_MESSAGE, font, {10, 50}, window);
+				window.display();
 			}
 		}
 	}
 
-	void GameSettingMenu(Game& game, sf::Event& event, sf::RenderWindow& window, sf::Font& font, bool& triggerEndGame){
-		bool stealConfiguring = true;
+	void MainMenu(Game& game, sf::Event& event, sf::RenderWindow& window, sf::Font& font)
+	{
+		bool selector[] = {true, false, false, false};
+		while(game.gameState == GameState::MainMenu)
+		{
+			window.clear();
+
+			while(window.pollEvent(event))
+			{
+				if (event.type == sf::Event::Closed)
+				{
+					game.gameState = GameState::Exit;
+					window.close();
+					break;
+				}				
+			}
+
+			for(size_t i = 0; i < 4; i++)
+			{
+				if ((event.type == sf::Event::KeyPressed) && event.key.code == sf::Keyboard::Up && !selector[0]) 
+				{
+					if(selector[i])
+					{
+						selector[i] = false;
+						selector[i-1] = true;
+						sf::sleep(sf::microseconds(150000));
+						break;
+					}
+				}
+				else if ((event.type == sf::Event::KeyPressed) && event.key.code == sf::Keyboard::Down && !selector[3]) 
+				{
+					if(selector[i])
+					{
+						selector[i] = false;
+						selector[i+1] = true;
+						sf::sleep(sf::microseconds(150000));
+						break;
+					}
+				}
+				else if (event.key.code == sf::Keyboard::Enter)
+				{
+					if (selector[0])
+					{
+						game.gameState = GameState::Play;
+					}
+					else if (selector[1])
+					{
+						game.gameState = GameState::ScoreAndLegend;
+					}
+					else if (selector[2])
+					{
+						game.gameState = GameState::SettingMenu;
+					}
+					else if (selector[3])
+					{
+						game.gameState = GameState::Exit;
+					}
+				}
+			}
+
+			DrawText("Play", font, {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4}, window, selector[0] ? sf::Color::Red : sf::Color::White);
+			DrawText("Top scores & Legend", font, {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4 + 30}, window, selector[1] ? sf::Color::Red : sf::Color::White);
+			DrawText("Settings", font, {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4 + 60}, window, selector[2] ? sf::Color::Red : sf::Color::White);
+			DrawText("Exit", font, {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4 + 90}, window, selector[3] ? sf::Color::Red : sf::Color::White);
+			window.display();
+		}
+	}
+
+	void GameSettingMenu(Game& game, sf::Event& event, sf::RenderWindow& window, sf::Font& font){
 		bool selector [2][4] = {{true, false, false, false},
 								{false, false, false, false}};
-		while(stealConfiguring)
+		while(game.gameState == GameState::SettingMenu)
 		{
+			sf::sleep(sf::microseconds(16));
 			window.clear();
 			while (window.pollEvent(event))
 			{
-				if (event.type == sf::Event::Closed || event.key.code == sf::Keyboard::Escape) {
-					stealConfiguring = false;
-					triggerEndGame = true;
+				if (event.type == sf::Event::Closed) 
+				{
+					game.gameState = GameState::Exit;
 					window.close();
 					break;
 				}
 			}
-			if (event.key.code == sf::Keyboard::Enter) {
-				stealConfiguring = false;
+			if (event.key.code == sf::Keyboard::Escape) 
+			{
+				game.gameState = GameState::MainMenu;
+				sf::sleep(sf::microseconds(150000));
 				break;
 			}
 
@@ -288,39 +388,70 @@ namespace ApplesGame
 		}
 	}
 
-	void WictoryMenu(Game& game, sf::Font& font, sf::RenderWindow& window, sf::Event& event)
+	void PauseMenu(Game& game, sf::Event& event, sf::RenderWindow& window, sf::Font& font)
 	{
-		if(game.numEatenApples == NUM_APPLE - game.RandomNumForApple){
-			game.wictory = true;
-		}
-
-		if(game.wictory)
-		{
-			sf::Text wictoryText; 
-			wictoryText.setFont(font);
-			wictoryText.setCharacterSize(20);
-			wictoryText.setFillColor(sf::Color::Green);
-			wictoryText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f);
-			wictoryText.setString("Winner!!!\n\"Enter\" for continue\n\"Esc\" for close game");
-			window.draw(wictoryText);
-			window.display();
-		}
-		while(game.wictory)
+		DrawText("Press 'Enter' for continue", font, {SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f}, window, sf::Color::Green);
+		DrawText("Press 'Esc' go Main Menu", font, {SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f + 30}, window, sf::Color::Red);
+		window.display();
+		while(game.gameState == GameState::PauseMenu)
 		{
 			while (window.pollEvent(event))
 			{
-				if (((event.type == sf::Event::KeyPressed) && event.key.code == sf::Keyboard::Escape) || event.type == sf::Event::Closed) {
-					game.wictory = false;
+				if (event.type == sf::Event::Closed) 
+				{
+					game.gameState = GameState::Exit;
 					window.close();
 					break;
 				}
 			}
+
 			if(event.key.code == sf::Keyboard::Enter)
-			{
+			{	
+				game.gameState = GameState::Play;
+				sf::sleep(sf::microseconds(150000));
 				break;
 			}
 
-			sf::sleep(sf::microseconds(100000));
+			if(event.key.code == sf::Keyboard::Escape)
+			{
+				game.gameState = GameState::MainMenu;
+				sf::sleep(sf::microseconds(150000));
+				break;
+			}
+		}
+	}
+
+	void WictoryMenu(Game& game, sf::Font& font, sf::RenderWindow& window, sf::Event& event)
+	{
+		DrawText("Winner!!!\n\"Enter\" for continue\n\"Esc\" go to Main Menu", 
+			font, {SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f}, window, sf::Color::Green);
+		window.display();
+
+		while(game.gameState == GameState::GameOver)
+		{
+			while (window.pollEvent(event))
+			{
+				if (event.type == sf::Event::Closed) 
+				{
+					game.gameState = GameState::Exit;
+					window.close();
+					break;
+				}
+			}
+			
+			if(event.key.code == sf::Keyboard::Enter)
+			{
+				game.gameState = GameState::Play;
+				sf::sleep(sf::microseconds(150000));
+				break;
+			}
+			else if(event.key.code == sf::Keyboard::Escape)
+			{
+				game.gameState = GameState::MainMenu;
+				sf::sleep(sf::microseconds(150000));
+				break;
+			}
+
 		}
 	}
 }

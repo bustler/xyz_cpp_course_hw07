@@ -18,10 +18,13 @@ namespace ApplesGame
 
 	const enum class GameState : int
 	{
-		Play = 0,
-		SettingMenu,
-		PauseMenu,
-		IsClose
+		MainMenu = 0,
+		Play = 1,
+		SettingMenu = 2,
+		ScoreAndLegend = 3,
+		PauseMenu = 4,
+		GameOver = 5,
+		Exit = 6,
 	};
 
 	struct Player
@@ -36,6 +39,9 @@ namespace ApplesGame
 	struct Game
 	{
 		Player player;
+		GameState gameState = GameState::MainMenu;
+		bool lastStatePause = false;
+		int frameCounter = 0;
 
 		//Apples data
 		Position2D applesPositions[NUM_APPLE];
@@ -53,12 +59,19 @@ namespace ApplesGame
 
 		//Scores
 		int numEatenApples = 0;
-		bool wictory = false;
+		int bestValueEatenApple = 0;
+		int bufferEaten = 0;
 		sf::RectangleShape background;
 		int RandomNumForApple = 0;
 		int RandomNumForRock = 0;
 		int scoresPoints[6] = {0, 0, 0, 0, 0, 0};
 		std::string scoresNames[6] = {"Nagibator777", "Guest", "Nobody", "***DENCHIK***", "Phedot", "Player"};
+
+		//Time
+		float Time = 0.f;
+		sf::Clock gameClock;
+		float lastTime = gameClock.getElapsedTime().asSeconds();
+		float currentTime = gameClock.getElapsedTime().asSeconds();
 	};
 
 	void InitGame(Game& game);

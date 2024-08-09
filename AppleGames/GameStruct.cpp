@@ -22,7 +22,6 @@ namespace ApplesGame
 		// Player player;
 		InitPlayer(game.player);
 		game.numEatenApples = 0;
-		game.wictory = false;
 		
 		// Modes with random
 		if(game.setupOfGame & randnumberapple) // apples

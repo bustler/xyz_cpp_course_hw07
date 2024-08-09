@@ -15,7 +15,6 @@ int main()
 	srand(seed);
 
 	sf::RenderWindow window(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), "Apple games!"); //Header
-	bool triggerEndGame = false; //Check Pressed Esc After Collision
 	sf::Font font; font.loadFromFile("Resources/Fonts/Roboto-Regular.ttf"); //Set Font
 	
 	sf::SoundBuffer appleEatenSound;
@@ -29,44 +28,72 @@ int main()
 		game.scoresPoints[i] = ApplesGame::RandomNumber(50);
 	}
 
+	ApplesGame::MenuInfo info = ApplesGame::ShowInfo(font);
 	//Main Cycle Of Game
-	while (window.isOpen() && !triggerEndGame) {
-		int frameCounter = 0;
-		
-		// Initialize 
+	while (window.isOpen() && !(game.gameState == ApplesGame::GameState::Exit)) {
 		sf::Event event;
-		float Time = 0.f;
-		int bufferEaten = 0;
-		bool rockCollision = false; // Collision with rocks
-		bool borderCollision = false;
-		ApplesGame::GameSettingMenu(game, event, window, font, triggerEndGame); // Menu for setting game
 		
-		// Set Game
-		ApplesGame::InitGame(game);
-		ApplesGame::MenuInfo info = ApplesGame::ShowInfo(font);
-
-		// Time
-		sf::Clock gameClock;
-		float lastTime = gameClock.getElapsedTime().asSeconds(); //Time
-		
-		while (window.isOpen() && !triggerEndGame && !rockCollision && !game.wictory)
+		if (!game.lastStatePause)
 		{
-			if ((game.setupOfGame & havesound) && game.numEatenApples != bufferEaten) {
+			game.frameCounter = 0;
+			
+			// Initialize 
+			game.Time = 0.f;
+			game.bufferEaten = 0;
+			
+			// Set Game
+			ApplesGame::InitGame(game);
+		} 
+		else
+		{
+			game.lastStatePause = false;
+		}
+
+		if (window.isOpen() && game.gameState == ApplesGame::GameState::MainMenu)
+		{
+			ApplesGame::MainMenu(game, event, window, font);
+		}
+
+		if (window.isOpen() && game.gameState == ApplesGame::GameState::SettingMenu)
+		{
+			ApplesGame::GameSettingMenu(game, event, window, font);
+		}
+
+		if (window.isOpen() && game.gameState == ApplesGame::GameState::PauseMenu)
+		{
+			ApplesGame::PauseMenu(game, event, window, font);
+		}
+
+		if (window.isOpen() && game.gameState == ApplesGame::GameState::ScoreAndLegend)
+		{
+			ApplesGame::DrawTop(game, event, window, font);
+		}
+
+		if (window.isOpen() && game.gameState == ApplesGame::GameState::GameOver)
+		{
+			ApplesGame::EndGame(game, event, window, font);
+		}
+
+		game.currentTime = game.gameClock.getElapsedTime().asSeconds();
+		game.lastTime = game.currentTime;
+		while (window.isOpen() && game.gameState == ApplesGame::GameState::Play)
+		{
+			if ((game.setupOfGame & havesound) && game.numEatenApples != game.bufferEaten) {
 				goodSound.play();
-				bufferEaten = game.numEatenApples;
+				game.bufferEaten = game.numEatenApples;
 			}
 
-			sf::sleep(sf::microseconds(16));
+			sf::sleep(sf::microseconds(16)); 
 
 			//Time
-			float currentTime = gameClock.getElapsedTime().asSeconds();
-			float deltaTime = currentTime - lastTime;
-			lastTime = currentTime;
-			frameCounter++;
+			game.currentTime = game.gameClock.getElapsedTime().asSeconds();
+			float deltaTime = game.currentTime - game.lastTime;
+			game.lastTime = game.currentTime;
+			game.frameCounter++;
 
 			//Game Time
-			Time += deltaTime;
-			info.time.setString("Frame: " + std::to_string(frameCounter) + "\t Time: " + std::to_string(Time));
+			game.Time += deltaTime;
+			info.time.setString("Frame: " + std::to_string(game.frameCounter) + "\t Time: " + std::to_string(game.Time));
 
 			//Check event
 			while (window.pollEvent(event))
@@ -76,24 +103,34 @@ int main()
 					window.close();
 				}
 			}
+
+			if (event.key.code == sf::Keyboard::Space)
+			{
+				game.gameState = ApplesGame::GameState::PauseMenu;
+				game.lastStatePause = true;
+			} 
 			
 			//Game move & direction
 			SetDirection(game, event);
 			SetMovementInDirection(game, deltaTime);
 			
 			//Check all collision
-			CheckCollision(rockCollision, game, window, font, event, triggerEndGame, borderCollision);
-		 
-			if (rockCollision || borderCollision)break;
+			CheckCollision(game, window, font, event);
 
 			//Time Output Template
 			info.score.setString("Score of eaten applles: " + std::to_string(game.numEatenApples));
+			if (game.bestValueEatenApple < game.numEatenApples)
+			{
+				game.bestValueEatenApple = game.numEatenApples;
+			}
 			
 			//Prepare Window
 			DrawGame(window, game, info);
 
-			if(!(game.setupOfGame & infiniteapple) && game.numEatenApples == NUM_APPLE - game.RandomNumForApple){
-				game.wictory = true;
+			if(!(game.setupOfGame & infiniteapple) 
+					&& (game.numEatenApples == NUM_APPLE - game.RandomNumForApple))
+			{
+				game.gameState = ApplesGame::GameState::GameOver;
 				WictoryMenu(game, font, window, event);
 			}
 		}

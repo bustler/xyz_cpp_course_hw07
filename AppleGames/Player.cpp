@@ -87,16 +87,16 @@ namespace ApplesGame
 		}
 	}
 
-	void CheckCollision(bool& rockCollision, Game& game, sf::RenderWindow& window, sf::Font& font, sf::Event& event, bool& triggerEndGame, bool& borderCollision) {
+	void CheckCollision(Game& game, sf::RenderWindow& window, sf::Font& font, sf::Event& event) {
 		//Check Rock Collision With PLayer
 		if(!(game.setupOfGame & rockoff))
 		{
-			for (int i = 0; i < NUM_ROCK - game.RandomNumForRock && !rockCollision; i++) {
+			for (int i = 0; i < NUM_ROCK - game.RandomNumForRock 
+					&& !(game.gameState == ApplesGame::GameState::Exit); i++) {
 				if (fabs(game.rocksPositions[i].x - game.player.position.x) < (PLAYER_SIZE + game.sizeRockShape[i].width) / 2.f 
 					&& fabs(game.rocksPositions[i].y - game.player.position.y) < (PLAYER_SIZE + game.sizeRockShape[i].height) / 2.f)
 				{
-					rockCollision = true;
-					EndGame(window, font, event, triggerEndGame, game);
+					game.gameState = GameState::GameOver;
 				}
 			}
 		}
@@ -107,8 +107,7 @@ namespace ApplesGame
 			|| game.player.position.y - PLAYER_SIZE / 2.f < 0.f 
 			|| game.player.position.y + PLAYER_SIZE / 2.f > SCREEN_HEIGHT)
 		{
-			borderCollision = true;
-			EndGame(window, font, event, triggerEndGame, game);
+			game.gameState = GameState::GameOver;
 		}
 		
 		//Check Apple Collision With PLayer
